@@ -1,0 +1,13 @@
+= Rowser, a simple web browser simulator written in Ruby
+
+Rowser is a web browser simulator with special focus on name resolving behavior. If you are interested in performance tool tests, this is not a right tool for you. If you are interested in something which parses a html document to throw following requests, this is not a tool either. This tool, is intended to help developers who are interested in browsers' behavior in terms of their name resolving behaviors. To be specific, it is a tool for people who are running web apps relying on browsers' round robin features, i.e. having multiple DNS A records for one host, and especially those who often updates A records.
+
+== Background
+
+Amazon Web Services EC2, as of now (Nov 2008), does not provide load balancing and virtual IP addresses, so developers may creatively have to use software based load balancing or multiple A record based round robin for some scaling and fault tolerance. 
+
+Browser-based round robin has been discussed as a candidate for a scaling and fault-tolerant systems. Round robin is based on multiple DNS A records of a host, and its behavior really varies among modern browsers. It is all about how browsers resolve, cache, and manage host addresses internally. Since httperf does not take care of these DNS resolving behavior, I wanted a simulator focusing on this - name resolving behavior.
+
+I did some black box tests with some browsers, IE7, firefox, safari, chrome and Opera, while monitoring port 80 and 53 packets, and perhaps have depicted 80% of the truth in terms of their DNS behavior. So my aim is to reproduce how I saw in those tests, and do some tests with this tool against a auto scaling web app running on EC2 with multiple A records.
+
+AWS has recently announced that they will introduce a load balancing solution for EC2 early in 2009. Even if it becomes available, still, it would be nice to me (who is extra paranoid) to have a supplemental way to achieve fewer point of failure, and scalable applications in addition to their load balancing feature. Imagine the whole EC2 services had gone...
