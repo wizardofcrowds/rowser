@@ -62,19 +62,32 @@ module Rowser
     timeout_senario = [0.5, 1, 1, 1, 1, 1, 1, 2, 4, 8, 16, 32]
     Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 120, ttl, false, &block)
   end
+  
+  def Rowser.chrome(number_of_run, hostname, path, sleep_time = 60, ttl = 60, &block)
+    timeout_senario = [3, 6, 12]
+    Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 0, ttl, true, true, &block)
+  end
 
   
-  def Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, cache_flush, ttl, use_successful_addr = false, &block)
+  def Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, cache_flush, ttl, use_successful_addr = false, wise_chrome = false, &block)
     mutex = Mutex.new
     addrs = []
     simulated_os_dns_cache = Thread.new do
-      loop do
+      if wise_chrome
+        puts "get addresses only once"
         mutex.synchronize do
-          puts "getting addresses"
-          addrs = get_addresses("hoge.innogile.com")
-          puts "got addresses #{addrs.inspect}"
+          addrs = get_addresses(hostname)
         end
-        sleep ttl < cache_flush ? cache_flush : ttl
+        puts  "got addresses #{addrs.inspect}"
+      else
+        loop do
+          mutex.synchronize do
+            puts "getting addresses"
+            addrs = get_addresses(hostname)
+            puts "got addresses #{addrs.inspect}"
+          end
+          sleep ttl < cache_flush ? cache_flush : ttl
+        end
       end
     end    
 
@@ -89,10 +102,19 @@ module Rowser
           current_time = Time.now
           puts "========= #{i}-th try #{Time.now.to_i}=========="
           res = nil
-        result = Benchmark.measure {
+        bench_result = Benchmark.measure {
           res = Rowser.simulate(hostname, path, timeout_senario, address_cache)
+          if wise_chrome && res[0].nil?
+            puts "getting addresses again because all the servers not accessible"
+            mutex.synchronize do
+              addrs = Rowser.get_addresses(hostname)
+              address_cache = addrs
+            end            
+            res = Rowser.simulate(hostname, path, timeout_senario, address_cache)
+          end
         }
-        result = [res[0].nil? ? false : true, result]
+        # res[1] successful address, res[2] an array of addresses
+        result = [res[0].nil? ? false : true, bench_result, res[1], res[2]] 
         block.call(result)
         puts "========= #{i}-th try #{ res[0].nil? ? 'Fail' : 'Success' } #{Time.now.to_i} =========="
         results << result
