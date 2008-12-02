@@ -49,27 +49,27 @@ module Rowser
   VERSION = '0.0.1'
 
   def Rowser.safari3(number_of_run, hostname, path, sleep_time = 60, ttl = 60, &block)
-    timeout_senario = [1, 1, 2, 2, 4, 4, 8, 8, 16]
-    Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 0, ttl, false, &block)
+    timeout_scenario = [1, 1, 2, 2, 4, 4, 8, 8, 16]
+    Rowser.execute(number_of_run, hostname, path, timeout_scenario, sleep_time, 0, ttl, false, &block)
   end
 
   def Rowser.ie7(number_of_run, hostname, path, sleep_time = 60, ttl = 60, &block)
-    timeout_senario = [3, 6, 12]
-    Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 60 * 30, ttl, true, &block)
+    timeout_scenario = [3, 6, 12]
+    Rowser.execute(number_of_run, hostname, path, timeout_scenario, sleep_time, 60 * 30, ttl, true, &block)
   end
 
   def Rowser.firefox3(number_of_run, hostname, path, sleep_time = 60, ttl = 60, &block)
-    timeout_senario = [0.5, 1, 1, 1, 1, 1, 1, 2, 4, 8, 16, 32]
-    Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 120, ttl, false, &block)
+    timeout_scenario = [0.5, 1, 1, 1, 1, 1, 1, 2, 4, 8, 16, 32]
+    Rowser.execute(number_of_run, hostname, path, timeout_scenario, sleep_time, 120, ttl, false, &block)
   end
   
   def Rowser.chrome(number_of_run, hostname, path, sleep_time = 60, ttl = 60, &block)
-    timeout_senario = [3, 6, 12]
-    Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, 0, ttl, true, true, &block)
+    timeout_scenario = [3, 6, 12]
+    Rowser.execute(number_of_run, hostname, path, timeout_scenario, sleep_time, 0, ttl, true, true, &block)
   end
 
   
-  def Rowser.execute(number_of_run, hostname, path, timeout_senario, sleep_time, cache_flush, ttl, use_successful_addr = false, wise_chrome = false, &block)
+  def Rowser.execute(number_of_run, hostname, path, timeout_scenario, sleep_time, cache_flush, ttl, use_successful_addr = false, wise_chrome = false, &block)
     mutex = Mutex.new
     addrs = []
     simulated_os_dns_cache = Thread.new do
@@ -103,14 +103,14 @@ module Rowser
           puts "========= #{i}-th try #{Time.now.to_i}=========="
           res = nil
         bench_result = Benchmark.measure {
-          res = Rowser.simulate(hostname, path, timeout_senario, address_cache)
+          res = Rowser.simulate(hostname, path, timeout_scenario, address_cache)
           if wise_chrome && res[0].nil?
             puts "getting addresses again because all the servers not accessible"
             mutex.synchronize do
               addrs = Rowser.get_addresses(hostname)
               address_cache = addrs
             end            
-            res = Rowser.simulate(hostname, path, timeout_senario, address_cache)
+            res = Rowser.simulate(hostname, path, timeout_scenario, address_cache)
           end
         }
         # res[1] successful address, res[2] an array of addresses
@@ -143,16 +143,16 @@ module Rowser
     end
   end
   
-  def Rowser.simulate(hostname, path, timeout_senario, address_cac=nil)
-    res = round_robinie_get(hostname, path, timeout_senario, address_cac)
+  def Rowser.simulate(hostname, path, timeout_scenario, address_cac=nil)
+    res = round_robinie_get(hostname, path, timeout_scenario, address_cac)
   end
   
-  # timeout_senario - an array of positive integers or an integer - [1,2,3] means tcp connection will timeout after 1s,
+  # timeout_scenario - an array of positive integers or an integer - [1,2,3] means tcp connection will timeout after 1s,
   #                   then retry connection, and then will timeout after 2 secs, then retry connection 
   #                   which will timeout in 3s
-  def Rowser.round_robinie_get(hostname, path, timeout_senario, address_cache=nil)
+  def Rowser.round_robinie_get(hostname, path, timeout_scenario, address_cache=nil)
 
-    timeout_senario = timeout_senario.is_a?(Array) ? timeout_senario : [timeout_senario]
+    timeout_scenario = timeout_scenario.is_a?(Array) ? timeout_scenario : [timeout_scenario]
 
     addresses = address_cache.nil? ? get_addresses(hostname) : address_cache
     res = nil
@@ -160,7 +160,7 @@ module Rowser
     addresses.each {|address|
       addr = address
       http = Net::HTTP.new(address)
-      timeout_senario.each {|timeout|
+      timeout_scenario.each {|timeout|
         http.open_timeout = timeout
         http.read_timeout = timeout
         begin
